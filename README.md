@@ -31,7 +31,6 @@ Vouch is a secure, highly scalable, and production-ready Full-Stack Authenticati
 
 ---
 
-## 🛠️ Tech Stack & Architecture
 
 <!-- * **Framework:** NestJS (v10+)
 * **Language:** TypeScript
@@ -41,8 +40,8 @@ Vouch is a secure, highly scalable, and production-ready Full-Stack Authenticati
 * **Utilities:** Class-Validator, UUIDv4, RxJS, Supertest -->
 ## 🛠️ Tech Stack & Architecture
 
-* **Framework:** ![NestJS](https://img.shields.io/badge/NestJS-10.x-EA284E?style=flat&logo=nestjs&logoColor=white) 
 * **Language:** ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)
+* **Framework:** ![NestJS](https://img.shields.io/badge/NestJS-10.x-EA284E?style=flat&logo=nestjs&logoColor=white) 
 * **Database ORM:** ![TypeORM](https://img.shields.io/badge/TypeORM-PostgreSQL%20%2F%20MySQL-FE2C55?style=flat&logo=sequelize&logoColor=white) *(PostgreSQL/Neon Ready)*
 * **Authentication:** ![JWT](https://img.shields.io/badge/JWT-Passport%20%26%20Bcrypt-000000?style=flat&logo=json-web-tokens&logoColor=white) *(12-round salt work factor)*
 * **Media Storage:** ![Cloudinary](https://img.shields.io/badge/Cloudinary-SDK%20Engine-F52574?style=flat&logo=cloudinary&logoColor=white)
