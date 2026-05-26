@@ -169,15 +169,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📝 **License**
   This project is MIT licensed.
 
-## 🙏 **Acknowledgments**
+## 🙏 Acknowledgments
 
-    [NestJS](https://nestjs.com) - The progressive Node.js framework
+A massive thank you to the incredible tools, frameworks, and platforms that power this ecosystem:
 
-    [Neon](https://neon.tech) - Serverless PostgreSQL
-
-    [TypeORM](https://typeorm.io) - ORM for TypeScript
-
-    [Passport.js](https://passportjs.org) - Authentication middleware
+| Platform / Tool | Ecosystem Role | Badge |
+| :--- | :--- | :--- |
+| **[NestJS](https://nestjs.com)** | The progressive Node.js framework for building efficient, reliable, and scalable server-side applications. | ![NestJS](https://img.shields.io/badge/NestJS-EA284E?style=flat-square&logo=nestjs&logoColor=white) |
+| **[Neon](https://neon.tech)** | Serverless open-source alternative to AWS Aurora PostgreSQL, separating compute and storage for modern backends. | ![Neon](https://img.shields.io/badge/Neon-00E599?style=flat-square&logo=neon&logoColor=black) |
+| **[TypeORM](https://typeorm.io)** | Powerful Object-Relational Mapper that runs on NodeJS and enables elegant SQL management via TypeScript. | ![TypeORM](https://img.shields.io/badge/TypeORM-FE2C55?style=flat-square&logo=sequelize&logoColor=white) |
+| **[Passport.js](https://passportjs.org)** | Flexible and modular authentication middleware for Node.js, supporting seamless JWT integration strategies. | ![Passport.js](https://img.shields.io/badge/Passport.js-34E0A1?style=flat-square&logo=passport&logoColor=white) |
 
 ## 📞 **Support**
 
