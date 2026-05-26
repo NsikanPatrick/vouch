@@ -102,7 +102,7 @@ All core endpoints are versioned under `/api/v1`.
 
 1. **Clone the Repository:**
    ```bash
-   git clone [https://github.com/NsikanPatrick/vouch.git](https://github.com/NsikanPatrick/vouch.git)
+   git clone https://github.com/NsikanPatrick/vouch.git
    cd vouch
 
 2. **Install dependencies:**
@@ -151,6 +151,20 @@ All core endpoints are versioned under `/api/v1`.
 
     ### Inspect Automated Code Coverage Matrix
     npm run test:cov
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+    Fork the repository
+
+    Create your feature branch (git checkout -b feature/AmazingFeature)
+
+    Commit your changes (git commit -m 'Add some AmazingFeature')
+
+    Push to the branch (git push origin feature/AmazingFeature)
+
+    Open a Pull Request
 
 ## 📝 **License**
   This project is MIT licensed.
