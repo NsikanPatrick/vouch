@@ -1,6 +1,7 @@
 <!-- <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p> -->
+<!-- Reduce font size by adding more # like ### -->
 
 # VOUCH
 
@@ -112,18 +113,18 @@ All core endpoints are versioned under `/api/v1`.
 3. **Configure Environment Variables:**
     Create a .env file in the root directory and configure your credentials:
 
-    ## App Config 
+    ### App Config 
     PORT=1000
 
-    ## Database Config (Neon PostgreSQL)
+    ### Database Config (Neon PostgreSQL)
     DATABASE_URL=postgresql://user:password@host/db?sslmode=require
 
-    ## JWT Configuration Secrets
+    ### JWT Configuration Secrets
     JWT_ACCESS_SECRET=your_super_secret_access_key
     JWT_ACCESS_EXPIRY=15m
     JWT_VERIFICATION_SECRET=your_email_verification_secret_key
 
-    ## Cloudinary Credentials
+    ### Cloudinary Credentials
     CLOUDINARY_CLOUD_NAME=your_cloud_name
     CLOUDINARY_API_KEY=your_api_key
     CLOUDINARY_API_SECRET=your_api_secret
@@ -132,10 +133,10 @@ All core endpoints are versioned under `/api/v1`.
     Ensure your target database instance is up and running.
 
 5. **Fire Up the Engine Server:**
-    ## Development watch mode
+    ### Development watch mode
     npm run start:dev
 
-    ## Production build compilation
+    ### Production build compilation
     npm run build
     npm run start:prod
 
@@ -143,19 +144,19 @@ All core endpoints are versioned under `/api/v1`.
 
     The code maintains strict behavioral unit testing isolates along with end-to-end integration boundaries via Jest.
 
-    ## Execute Unit Isolated Suites
+    ### Execute Unit Isolated Suites
     npm run test
 
-    ## Run End-To-End HTTP Route Tests
+    ### Run End-To-End HTTP Route Tests
     npm run test:e2e
 
-    ## Inspect Automated Code Coverage Matrix
+    ### Inspect Automated Code Coverage Matrix
     npm run test:cov
 
-📝 **License**
+## 📝 **License**
   This project is MIT licensed.
 
-🙏 **Acknowledgments**
+## 🙏 **Acknowledgments**
 
     [NestJS](https://nestjs.com) - The progressive Node.js framework
 
@@ -165,7 +166,7 @@ All core endpoints are versioned under `/api/v1`.
 
     [Passport.js](https://passportjs.org) - Authentication middleware
 
-📞 **Support**
+## 📞 **Support**
 
     📧 Email: support@vouch.com
 
