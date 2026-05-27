@@ -18,6 +18,8 @@ export default registerAs('appConfig', () => ({
         pass: process.env.EMAIL_PASS,
         fromName: process.env.EMAIL_FROM_NAME || 'Vouch',
         fromAddress: process.env.EMAIL_FROM_ADDRESS || 'onboarding@resend.dev',
+        resendApiKey: process.env.RESEND_API_KEY,
+        webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     },
 
     // Frontendurl Configuration

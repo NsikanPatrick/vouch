@@ -73,7 +73,7 @@ export class EmailLog {
     status: EmailStatus;
 
     @Column({ nullable: true })
-    messageId: string; // Provider's message ID - SendGrid, AWS SES, etc
+    messageId: string; // Provider's message ID - (Resend, SendGrid, AWS SES, etc)
 
     @Column({ nullable: true, type: 'text' })
     errorMessage: string; // If email failed, store the error

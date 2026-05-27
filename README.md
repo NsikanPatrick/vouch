@@ -173,7 +173,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 A massive thank you to the incredible tools, frameworks, and platforms that power this ecosystem:
 
-| Platform / Tool | Ecosystem Role | Badge |
+| Platform / Tool | Ecosystem Role |  |
 | :--- | :--- | :--- |
 | **[NestJS](https://nestjs.com)** | The progressive Node.js framework for building efficient, reliable, and scalable server-side applications. | ![NestJS](https://img.shields.io/badge/NestJS-EA284E?style=flat-square&logo=nestjs&logoColor=white) |
 | **[Neon](https://neon.tech)** | Serverless open-source alternative to AWS Aurora PostgreSQL, separating compute and storage for modern backends. | ![Neon](https://img.shields.io/badge/Neon-00E599?style=flat-square&logo=neon&logoColor=black) |
