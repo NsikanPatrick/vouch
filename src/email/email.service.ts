@@ -77,6 +77,9 @@ export class EmailService {
                 subject,
                 html,
             });
+
+            // info.messageId should be the Resend email ID
+            console.log('Resend messageId:', info.messageId);
             
             // Update log with success info
             await this.updateEmailLog(emailLog, {
@@ -419,29 +422,107 @@ export class EmailService {
     }
 
     // Method to get email statistics (for admin dashboard)
-    async getEmailStats(startDate: Date, endDate: Date): Promise<any> {
-        const stats = await this.emailLogRepository
-            .createQueryBuilder('email_log')
-            .select('email_log.type', 'type')
-            .addSelect('COUNT(*)', 'total')
-            .addSelect('SUM(CASE WHEN email_log.status = :sent THEN 1 ELSE 0 END)', 'sent')
-            .addSelect('SUM(CASE WHEN email_log.status = :delivered THEN 1 ELSE 0 END)', 'delivered')
-            .addSelect('SUM(CASE WHEN email_log.status = :opened THEN 1 ELSE 0 END)', 'opened')
-            .addSelect('SUM(CASE WHEN email_log.status = :clicked THEN 1 ELSE 0 END)', 'clicked')
-            .addSelect('SUM(CASE WHEN email_log.status = :failed THEN 1 ELSE 0 END)', 'failed')
-            .addSelect('SUM(CASE WHEN email_log.status = :bounced THEN 1 ELSE 0 END)', 'bounced')
-            .where('email_log.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate })
-            .setParameters({
-                sent: EmailStatus.SENT,
-                delivered: EmailStatus.DELIVERED,
-                opened: EmailStatus.OPENED,
-                clicked: EmailStatus.CLICKED,
-                failed: EmailStatus.FAILED,
-                bounced: EmailStatus.BOUNCED,
-            })
-            .groupBy('email_log.type')
-            .getRawMany();
+    async getEmailStats(startDate?: Date, endDate?: Date): Promise<any> {
+        try {
+            const queryBuilder = this.emailLogRepository
+                .createQueryBuilder('email_log')
+                .select('email_log.type', 'type')
+                .addSelect('COUNT(*)', 'total')
+                .addSelect('SUM(CASE WHEN email_log.status = :sent THEN 1 ELSE 0 END)', 'sent')
+                .addSelect('SUM(CASE WHEN email_log.status = :delivered THEN 1 ELSE 0 END)', 'delivered')
+                .addSelect('SUM(CASE WHEN email_log.status = :opened THEN 1 ELSE 0 END)', 'opened')
+                .addSelect('SUM(CASE WHEN email_log.status = :clicked THEN 1 ELSE 0 END)', 'clicked')
+                .addSelect('SUM(CASE WHEN email_log.status = :failed THEN 1 ELSE 0 END)', 'failed')
+                .addSelect('SUM(CASE WHEN email_log.status = :bounced THEN 1 ELSE 0 END)', 'bounced')
+                .setParameters({
+                    sent: EmailStatus.SENT,
+                    delivered: EmailStatus.DELIVERED,
+                    opened: EmailStatus.OPENED,
+                    clicked: EmailStatus.CLICKED,
+                    failed: EmailStatus.FAILED,
+                    bounced: EmailStatus.BOUNCED,
+                });
 
-        return stats;
+            // Only add date filter if both dates are provided and valid
+            if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                queryBuilder.where('email_log.createdAt BETWEEN :startDate AND :endDate', {
+                    startDate,
+                    endDate
+                });
+            }
+
+            const stats = await queryBuilder.groupBy('email_log.type').getRawMany();
+
+            // If no stats found, return a default response
+            if (!stats || stats.length === 0) {
+                const totalEmails = await this.emailLogRepository.count();
+                const emailsByType = await this.emailLogRepository
+                    .createQueryBuilder('email_log')
+                    .select('email_log.type', 'type')
+                    .addSelect('COUNT(*)', 'count')
+                    .groupBy('email_log.type')
+                    .getRawMany();
+
+                return {
+                    stats: [],
+                    message: totalEmails === 0 ? 'No emails have been sent yet' : 'No emails found in the specified date range',
+                    totalEmailsInDatabase: totalEmails,
+                    emailsByType: emailsByType,
+                    suggestion: totalEmails > 0 ? 'Try removing date filters to see all emails' : 'Register a user to send a test email'
+                };
+            }
+
+            return stats;
+        } catch (error) {
+            this.logger.error('Error getting email stats:', error);
+            throw error;
+        }
     }
+
+    // Add a new method to get all email logs with details
+    async getAllEmailLogs(page: number = 1, limit: number = 20) {
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await this.emailLogRepository.findAndCount({
+            relations: ['user'],
+            order: { createdAt: 'DESC' },
+            skip,
+            take: limit,
+        });
+
+        return {
+            logs,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+
+    // // Method to get email statistics (for admin dashboard)
+    // async getEmailStats(startDate: Date, endDate: Date): Promise<any> {
+    //     const stats = await this.emailLogRepository
+    //         .createQueryBuilder('email_log')
+    //         .select('email_log.type', 'type')
+    //         .addSelect('COUNT(*)', 'total')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :sent THEN 1 ELSE 0 END)', 'sent')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :delivered THEN 1 ELSE 0 END)', 'delivered')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :opened THEN 1 ELSE 0 END)', 'opened')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :clicked THEN 1 ELSE 0 END)', 'clicked')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :failed THEN 1 ELSE 0 END)', 'failed')
+    //         .addSelect('SUM(CASE WHEN email_log.status = :bounced THEN 1 ELSE 0 END)', 'bounced')
+    //         .where('email_log.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate })
+    //         .setParameters({
+    //             sent: EmailStatus.SENT,
+    //             delivered: EmailStatus.DELIVERED,
+    //             opened: EmailStatus.OPENED,
+    //             clicked: EmailStatus.CLICKED,
+    //             failed: EmailStatus.FAILED,
+    //             bounced: EmailStatus.BOUNCED,
+    //         })
+    //         .groupBy('email_log.type')
+    //         .getRawMany();
+
+    //     return stats;
+    // }
 }
