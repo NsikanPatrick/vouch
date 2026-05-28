@@ -17,7 +17,7 @@ export default registerAs('appConfig', () => ({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
         fromName: process.env.EMAIL_FROM_NAME || 'Vouch',
-        fromAddress: process.env.EMAIL_FROM_ADDRESS || 'onboarding@resend.dev',
+        fromAddress: process.env.EMAIL_FROM_ADDRESS,
         resendApiKey: process.env.RESEND_API_KEY,
         webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     },
