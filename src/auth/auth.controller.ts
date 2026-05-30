@@ -14,7 +14,7 @@ import {
     Param,
     UseInterceptors, UploadedFile
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service-dmpFile';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -212,7 +212,7 @@ export class AuthController {
     @Roles(UserRole.ADMIN)
     @Patch('users/:userId/status')
     updateUserStatus(
-        @Param('userId') userId: string, @Body('status') status: string, ) {
+        @Param('userId') userId: string, @Body('status') status: string,) {
         return this.authService.updateUserStatus(userId, status as any);
     }
 }

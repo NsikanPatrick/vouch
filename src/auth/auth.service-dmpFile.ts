@@ -45,15 +45,12 @@ export class AuthService {
         private jwtService: JwtService,
         private eventEmitter: EventEmitter2,
         private fileUploadService: FileUploadService,
-        private configService: ConfigService
+        private configService: ConfigService // Will extract details from app.config.ts
     ) { }
-
-    private get saltRounds(): number {
-        return this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
-    }
 
     // ==================== REGISTRATION ====================
     async register(registerDto: RegisterDto) {
+        // Check if user exists
         const existingUser = await this.usersRepository.findOne({
             where: { email: registerDto.email.toLowerCase() },
         });
@@ -62,8 +59,16 @@ export class AuthService {
             throw new ConflictException('User with this email already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(registerDto.password, this.saltRounds);
+        // Hash password
+        const saltRounds = this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
+        const hashedPassword = await bcrypt.hash(registerDto.password, saltRounds);
+        // const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
+
+        // Create verification token
+        // const verificationToken = uuidv4();
+
+        // Create new user
         const newUser = this.usersRepository.create({
             email: registerDto.email.toLowerCase(),
             name: registerDto.name,
@@ -74,19 +79,24 @@ export class AuthService {
 
         const savedUser = await this.usersRepository.save(newUser);
 
+        // Create verification token
+        // Emit event for email sending (now carrying a valid JWT string)
         const verificationToken = this.jwtService.sign(
             { userId: savedUser.id },
             {
-                secret: this.configService.get<string>('appConfig.auth.jwtVerificationSecret'),
+                secret: this.configService.get<string>('appConfig.auth.jwtVerificationSecret'), // 👈 Matches your verifyEmail secret key
                 expiresIn: '24h'
             }
         );
 
+        // Emit event for email sending (handled by listener)
         await this.eventEmitter.emitAsync(
-            UserRegisteredEvent.eventName,
+            // 'user.registered',
+            UserRegisteredEvent.eventName, //The eventName is defnd in the event.service file
             new UserRegisteredEvent(savedUser, verificationToken),
         );
 
+        // Return user without password
         const { password, ...result } = savedUser;
         return {
             user: result,
@@ -96,40 +106,40 @@ export class AuthService {
 
     // ==================== EMAIL VERIFICATION ====================
     async verifyEmail(token: string) {
-        let payload: any;
-        const verificationSecret = this.configService.get<string>('appConfig.auth.jwtVerificationSecret');
+        // In production, you'd store verification tokens in a separate table
+        // For simplicity, we'll use a JWT token or store in cache
 
+        // This is a simplified version - in production, implement proper token storage
+        // We'll use a JWT token for email verification
         try {
-            payload = this.jwtService.verify(token, { secret: verificationSecret });
+            const verificationSecret = this.configService.get<string>('appConfig.auth.jwtVerificationSecret');
+            const payload = this.jwtService.verify(token, { secret: verificationSecret });
+
+            const user = await this.usersRepository.findOne({
+                where: { id: payload.userId },
+            });
+
+            if (!user) {
+                throw new BadRequestException('Invalid verification token');
+            }
+
+            if (user.emailVerifiedAt) {
+                throw new BadRequestException('Email already verified');
+            }
+
+            // Update user
+            user.emailVerifiedAt = new Date();
+            user.status = AccountStatus.ACTIVE;
+            await this.usersRepository.save(user);
+
+            // Emit event
+            // this.eventEmitter.emit('email.verified', new EmailVerifiedEvent(user));
+            await this.eventEmitter.emitAsync(EmailVerifiedEvent.eventName, new EmailVerifiedEvent(user));
+
+            return { message: 'Email verified successfully' };
         } catch (error) {
             throw new BadRequestException('Invalid or expired verification token');
         }
-
-        const user = await this.usersRepository.findOne({
-            where: { id: payload.userId },
-        });
-
-        if (!user) {
-            throw new BadRequestException('Invalid verification token');
-        }
-
-        if (user.emailVerifiedAt) {
-            throw new BadRequestException('Email already verified');
-        }
-
-        user.emailVerifiedAt = new Date();
-        user.status = AccountStatus.ACTIVE;
-        await this.usersRepository.save(user);
-
-        // Dispatched safely outside of token parsing exceptions
-        try {
-            await this.eventEmitter.emitAsync(EmailVerifiedEvent.eventName, new EmailVerifiedEvent(user));
-        } catch (eventError) {
-            // Log locally so the core response doesn't crash if the notification worker stumbles
-            // You can optionally inject NestJS Logger here to trace it cleanly
-        }
-
-        return { message: 'Email verified successfully' };
     }
 
     // ==================== LOGIN ====================
@@ -143,27 +153,35 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
+        // Check if account is locked
         if (user.isLocked()) {
             throw new UnauthorizedException(`Account is locked until ${user.lockedUntil}`);
         }
 
+        // Check if email is verified
         if (!user.isEmailVerified()) {
             throw new UnauthorizedException('Please verify your email before logging in');
         }
 
+        // Check if account is active
         if (user.status !== AccountStatus.ACTIVE) {
             throw new UnauthorizedException(`Account is ${user.status}. Please contact support.`);
         }
 
+        // Verify password
         const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
         if (!isPasswordValid) {
+            // Increment login attempts
             user.loginAttempts += 1;
 
+            // Lock account after 5 failed attempts
             if (user.loginAttempts >= 5) {
-                user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+                user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 minutes
                 await this.usersRepository.save(user);
 
+                // Emit account locked event
+                // this.eventEmitter.emit('account.locked', new AccountLockedEvent(user, 'Too many failed login attempts'));
                 await this.eventEmitter.emitAsync(AccountLockedEvent.eventName, new AccountLockedEvent(user, 'Too many failed login attempts'));
 
                 throw new UnauthorizedException('Account locked due to too many failed attempts. Try again in 15 minutes.');
@@ -173,16 +191,21 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
+        // Reset login attempts on successful login
         user.loginAttempts = 0;
         user.lockedUntil = null;
         user.lastLoginAt = new Date();
         user.lastLoginIp = ip;
         await this.usersRepository.save(user);
 
+        // Generate tokens
         const tokens = await this.generateTokens(user, userAgent, ip);
 
+        // Emit login event
+        // this.eventEmitter.emit('user.logged_in', new UserLoggedInEvent(user, ip, userAgent));
         await this.eventEmitter.emitAsync(UserLoggedInEvent.eventName, new UserLoggedInEvent(user, ip, userAgent));
 
+        // Return user without password
         const { password, ...result } = user;
         return {
             user: result,
@@ -198,17 +221,21 @@ export class AuthService {
             throw new NotFoundException('User not found');
         }
 
+        // 1. Process profile image if uploaded
         if (file) {
+            // Forward processing straight to our file upload service unit!
             const fileLog = await this.fileUploadService.uploadSingleFile(file, 'SuperAuth/profile_pictures');
-            user.profilePicture = fileLog.url;
+            user.profilePicture = fileLog.url; // Assign the saved secure cloud URL
         }
 
+        // 2. Process text payload mutations
         if (updateProfileDto.name) {
             user.name = updateProfileDto.name;
         }
 
         const updatedUser = await this.usersRepository.save(user);
 
+        // Strip hash out of response maps
         const { password, ...result } = updatedUser;
         return {
             message: 'Profile updated successfully',
@@ -217,7 +244,9 @@ export class AuthService {
     }
 
     // ==================== TOKEN GENERATION ====================
+    // Private helper function
     private async generateTokens(user: User, userAgent: string, ip: string) {
+        // Generate access token
         const accessToken = this.jwtService.sign(
             {
                 id: user.id,
@@ -225,15 +254,20 @@ export class AuthService {
                 role: user.role,
             },
             {
+                // The ones commented out and the ones used are the same, done in diff ways
                 secret: this.configService.get<string>('appConfig.auth.jwtAccessSecret'),
                 expiresIn: this.configService.get<string>('appConfig.auth.jwtAccessExpiry') as any,
+                // secret: process.env.JWT_ACCESS_SECRET,
+                // expiresIn: (process.env.JWT_ACCESS_EXPIRY || '15m') as any,
             },
         );
 
+        // Generate refresh token
         const refreshToken = uuidv4();
         const refreshTokenExpiry = new Date();
-        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
+        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7); // 7 days
 
+        // Save refresh token to database
         const refreshTokenEntity = this.refreshTokensRepository.create({
             token: refreshToken,
             user,
@@ -253,7 +287,9 @@ export class AuthService {
     }
 
     // ==================== REFRESH TOKEN ====================
+    // All async methods follow the default visibility - public
     async refreshToken(refreshToken: string) {
+        // Find refresh token in database
         const tokenEntity = await this.refreshTokensRepository.findOne({
             where: { token: refreshToken },
             relations: ['user'],
@@ -263,17 +299,21 @@ export class AuthService {
             throw new UnauthorizedException('Invalid refresh token');
         }
 
+        // Check if token is valid
         if (!tokenEntity.isValid()) {
+            // Revoke the invalid token
             tokenEntity.revokedAt = new Date();
             tokenEntity.revokedReason = 'Expired or revoked';
             await this.refreshTokensRepository.save(tokenEntity);
             throw new UnauthorizedException('Refresh token has expired');
         }
 
+        // Revoke old token (one-time use)
         tokenEntity.revokedAt = new Date();
         tokenEntity.revokedReason = 'Used for refresh';
         await this.refreshTokensRepository.save(tokenEntity);
 
+        // Generate new tokens
         const newTokens = await this.generateTokens(
             tokenEntity.user,
             tokenEntity.userAgent,
@@ -286,11 +326,13 @@ export class AuthService {
     // ==================== LOGOUT ====================
     async logout(userId: string, refreshToken?: string) {
         if (refreshToken) {
+            // Revoke specific refresh token
             await this.refreshTokensRepository.update(
                 { token: refreshToken },
                 { revokedAt: new Date(), revokedReason: 'User logout' },
             );
         } else {
+            // Revoke all refresh tokens for user
             await this.refreshTokensRepository.update(
                 { userId, revokedAt: IsNull() },
                 { revokedAt: new Date(), revokedReason: 'User logout' },
@@ -306,10 +348,12 @@ export class AuthService {
             where: { email: forgotPasswordDto.email.toLowerCase() },
         });
 
+        // For security, always return success even if user doesn't exist
         if (!user) {
             return { message: 'A password reset link has been sent to your registered email' };
         }
 
+        // Check if there's already a valid reset token
         const existingReset = await this.passwordResetsRepository.findOne({
             where: {
                 user: { id: user.id },
@@ -319,14 +363,17 @@ export class AuthService {
         });
 
         if (existingReset) {
+            // Revoke existing token
             existingReset.isUsed = true;
             await this.passwordResetsRepository.save(existingReset);
         }
 
+        // Generate reset token
         const resetToken = uuidv4();
         const resetExpiry = new Date();
-        resetExpiry.setHours(resetExpiry.getHours() + 1);
+        resetExpiry.setHours(resetExpiry.getHours() + 1); // 1 hour expiry
 
+        // Save reset token
         const passwordReset = this.passwordResetsRepository.create({
             token: resetToken,
             user,
@@ -336,6 +383,8 @@ export class AuthService {
 
         await this.passwordResetsRepository.save(passwordReset);
 
+        // Emit event for email sending
+        // this.eventEmitter.emit('password.reset.requested', new PasswordResetRequestedEvent(user, resetToken));
         await this.eventEmitter.emitAsync(PasswordResetRequestedEvent.eventName, new PasswordResetRequestedEvent(user, resetToken));
 
         return { message: 'If an account exists, a password reset link has been sent' };
@@ -343,6 +392,7 @@ export class AuthService {
 
     // ==================== RESET PASSWORD ====================
     async resetPassword(resetPasswordDto: ResetPasswordDto) {
+        // Find valid reset token
         const passwordReset = await this.passwordResetsRepository.findOne({
             where: { token: resetPasswordDto.token, isUsed: false },
             relations: ['user'],
@@ -352,19 +402,26 @@ export class AuthService {
             throw new BadRequestException('Invalid or expired reset token');
         }
 
-        const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, this.saltRounds);
+        // Hash new password
+        const saltRounds = this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
+        const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, saltRounds);
 
+        // Update user's password
         passwordReset.user.password = hashedPassword;
         await this.usersRepository.save(passwordReset.user);
 
+        // Mark token as used
         passwordReset.isUsed = true;
         await this.passwordResetsRepository.save(passwordReset);
 
+        // Revoke all refresh tokens for security
         await this.refreshTokensRepository.update(
             { userId: passwordReset.user.id, revokedAt: IsNull() },
             { revokedAt: new Date(), revokedReason: 'Password reset' },
         );
 
+        // Emit event
+        // this.eventEmitter.emit('password.reset.success', new PasswordResetSuccessEvent(passwordReset.user));
         await this.eventEmitter.emitAsync(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(passwordReset.user));
 
         return { message: 'Password reset successful. Please login with your new password.' };
@@ -381,22 +438,27 @@ export class AuthService {
             throw new NotFoundException('User not found');
         }
 
+        // Verify current password
         const isPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
 
         if (!isPasswordValid) {
             throw new UnauthorizedException('Current password is incorrect');
         }
 
-        const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, this.saltRounds);
+        // Hash new password
+        const saltRounds = this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
+        const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, saltRounds);
 
+        // Update password
         user.password = hashedPassword;
         await this.usersRepository.save(user);
 
+        // Revoke all refresh tokens except the current session
         await this.refreshTokensRepository.update(
             {
                 userId,
                 revokedAt: IsNull(),
-                ...(currentRefreshToken && { token: Not(currentRefreshToken) })
+                ...(currentRefreshToken && { token: Not(currentRefreshToken) }) // Protects current session if provided
             },
             {
                 revokedAt: new Date(),
@@ -404,6 +466,8 @@ export class AuthService {
             },
         );
 
+        // Send notification email (handled by event)
+        // this.eventEmitter.emit('password.reset.success', new PasswordResetSuccessEvent(user as any));
         await this.eventEmitter.emitAsync(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(user as any));
 
         return { message: 'Password changed successfully' };
@@ -411,6 +475,7 @@ export class AuthService {
 
     // ==================== ADMIN: CREATE ADMIN ====================
     async createAdmin(registerDto: RegisterDto, creatorId: string) {
+        // Check if creator is admin (this should be checked by guard, but double-check)
         const creator = await this.usersRepository.findOne({
             where: { id: creatorId },
         });
@@ -419,6 +484,7 @@ export class AuthService {
             throw new UnauthorizedException('Only admins can create admin accounts');
         }
 
+        // Check if user exists
         const existingUser = await this.usersRepository.findOne({
             where: { email: registerDto.email.toLowerCase() },
         });
@@ -427,15 +493,17 @@ export class AuthService {
             throw new ConflictException('User with this email already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(registerDto.password, this.saltRounds);
+        // Hash password
+        const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
+        // Create admin user
         const newAdmin = this.usersRepository.create({
             email: registerDto.email.toLowerCase(),
             name: registerDto.name,
             password: hashedPassword,
             role: UserRole.ADMIN,
             status: AccountStatus.ACTIVE,
-            emailVerifiedAt: new Date(),
+            emailVerifiedAt: new Date(), // Auto-verify admin emails
         });
 
         const savedAdmin = await this.usersRepository.save(newAdmin);
@@ -497,8 +565,3 @@ export class AuthService {
         return { message: `User status updated to ${status}` };
     }
 }
-
-
-
-
-
