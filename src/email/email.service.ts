@@ -23,7 +23,7 @@ export class EmailService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        await this.initializeResend();
+        this.initializeResend();
     }
 
     private async initializeResend() {
@@ -41,7 +41,7 @@ export class EmailService implements OnModuleInit {
             this.logger.log('Resend email service initialized successfully');
 
             // Test the API key
-            await this.testConnection();
+            // await this.testConnection();
         } catch (error) {
             this.logger.error('Failed to initialize Resend:', error);
             this.isConfigured = false;

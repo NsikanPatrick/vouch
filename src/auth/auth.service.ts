@@ -90,7 +90,7 @@ export class AuthService {
         );
 
         // Emit event for email sending (handled by listener)
-        this.eventEmitter.emit(
+        await this.eventEmitter.emitAsync(
             // 'user.registered',
             UserRegisteredEvent.eventName, //The eventName is defnd in the event.service file
             new UserRegisteredEvent(savedUser, verificationToken),
@@ -134,7 +134,7 @@ export class AuthService {
 
             // Emit event
             // this.eventEmitter.emit('email.verified', new EmailVerifiedEvent(user));
-            this.eventEmitter.emit(EmailVerifiedEvent.eventName, new EmailVerifiedEvent(user));
+            await this.eventEmitter.emitAsync(EmailVerifiedEvent.eventName, new EmailVerifiedEvent(user));
 
             return { message: 'Email verified successfully' };
         } catch (error) {
@@ -182,7 +182,7 @@ export class AuthService {
 
                 // Emit account locked event
                 // this.eventEmitter.emit('account.locked', new AccountLockedEvent(user, 'Too many failed login attempts'));
-                this.eventEmitter.emit(AccountLockedEvent.eventName, new AccountLockedEvent(user, 'Too many failed login attempts'));
+                await this.eventEmitter.emitAsync(AccountLockedEvent.eventName, new AccountLockedEvent(user, 'Too many failed login attempts'));
 
                 throw new UnauthorizedException('Account locked due to too many failed attempts. Try again in 15 minutes.');
             }
@@ -203,7 +203,7 @@ export class AuthService {
 
         // Emit login event
         // this.eventEmitter.emit('user.logged_in', new UserLoggedInEvent(user, ip, userAgent));
-        this.eventEmitter.emit(UserLoggedInEvent.eventName, new UserLoggedInEvent(user, ip, userAgent));
+        await this.eventEmitter.emitAsync(UserLoggedInEvent.eventName, new UserLoggedInEvent(user, ip, userAgent));
 
         // Return user without password
         const { password, ...result } = user;
@@ -385,7 +385,7 @@ export class AuthService {
 
         // Emit event for email sending
         // this.eventEmitter.emit('password.reset.requested', new PasswordResetRequestedEvent(user, resetToken));
-        this.eventEmitter.emit(PasswordResetRequestedEvent.eventName, new PasswordResetRequestedEvent(user, resetToken));
+        await this.eventEmitter.emitAsync(PasswordResetRequestedEvent.eventName, new PasswordResetRequestedEvent(user, resetToken));
 
         return { message: 'If an account exists, a password reset link has been sent' };
     }
@@ -403,7 +403,8 @@ export class AuthService {
         }
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 12);
+        const saltRounds = this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
+        const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, saltRounds);
 
         // Update user's password
         passwordReset.user.password = hashedPassword;
@@ -421,7 +422,7 @@ export class AuthService {
 
         // Emit event
         // this.eventEmitter.emit('password.reset.success', new PasswordResetSuccessEvent(passwordReset.user));
-        this.eventEmitter.emit(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(passwordReset.user));
+        await this.eventEmitter.emitAsync(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(passwordReset.user));
 
         return { message: 'Password reset successful. Please login with your new password.' };
     }
@@ -445,7 +446,8 @@ export class AuthService {
         }
 
         // Hash new password
-        const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 12);
+        const saltRounds = this.configService.get<number>('appConfig.auth.bcryptSaltRounds') || 12;
+        const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, saltRounds);
 
         // Update password
         user.password = hashedPassword;
@@ -466,7 +468,7 @@ export class AuthService {
 
         // Send notification email (handled by event)
         // this.eventEmitter.emit('password.reset.success', new PasswordResetSuccessEvent(user as any));
-        this.eventEmitter.emit(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(user as any));
+        await this.eventEmitter.emitAsync(PasswordResetSuccessEvent.eventName, new PasswordResetSuccessEvent(user as any));
 
         return { message: 'Password changed successfully' };
     }

@@ -9,7 +9,7 @@ export class AuthListener {
 
     constructor(private emailService: EmailService) { }
 
-    @OnEvent(UserRegisteredEvent.eventName, { async: true })
+    @OnEvent(UserRegisteredEvent.eventName)
     async handleUserRegistered(event: UserRegisteredEvent) {
         this.logger.log(`Processing registration for user: ${event.user.email}`);
 
