@@ -103,50 +103,8 @@ export class EmailController {
             },
         };
     }
-
-    // TEST ENDPOINTS - For simulating email events (remove in production)
-    @Post('test/simulate-delivery')
-    async simulateDelivery(@Body('messageId') messageId: string) {
-        const emailLog = await this.emailLogRepository.findOne({
-            where: { messageId }
-        });
-
-        if (emailLog) {
-            emailLog.status = EmailStatus.DELIVERED;
-            emailLog.deliveredAt = new Date();
-            await this.emailLogRepository.save(emailLog);
-            return { message: 'Delivery simulated', emailLog };
-        }
-        return { message: 'Email log not found' };
-    }
-
-    @Post('test/simulate-open')
-    async simulateOpen(@Body('messageId') messageId: string) {
-        const emailLog = await this.emailLogRepository.findOne({
-            where: { messageId }
-        });
-
-        if (emailLog && (emailLog.status === EmailStatus.SENT || emailLog.status === EmailStatus.DELIVERED)) {
-            emailLog.status = EmailStatus.OPENED;
-            emailLog.openedAt = new Date();
-            await this.emailLogRepository.save(emailLog);
-            return { message: 'Open simulated', emailLog };
-        }
-        return { message: 'Email log not found or invalid status' };
-    }
-
-    @Post('test/simulate-click')
-    async simulateClick(@Body('messageId') messageId: string) {
-        const emailLog = await this.emailLogRepository.findOne({
-            where: { messageId }
-        });
-
-        if (emailLog && emailLog.status === EmailStatus.OPENED) {
-            emailLog.status = EmailStatus.CLICKED;
-            emailLog.clickedAt = new Date();
-            await this.emailLogRepository.save(emailLog);
-            return { message: 'Click simulated', emailLog };
-        }
-        return { message: 'Email log not found or email not opened yet' };
-    }
 }
+
+
+
+

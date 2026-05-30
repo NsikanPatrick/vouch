@@ -14,6 +14,9 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
     synchronize: process.env.NODE_ENV !== 'production', // Auto-sync only in dev
     logging: process.env.NODE_ENV !== 'production',
     entities: [User, RefreshToken, PasswordReset, EmailLog, FileEntity],
+    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+    migrationsRun: process.env.NODE_ENV === 'production', // Auto-run migrations in production
+    migrationsTableName: 'migrations',
     extra: {
         max: 20,
         connectionTimeoutMillis: 10000,

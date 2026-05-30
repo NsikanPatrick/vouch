@@ -6,7 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailLog, EmailType, EmailStatus } from './entities/email-log.entity';
 import { User } from '../auth/entities/user.entity';
 
-// Use Resend SDK instead of Nodemailer for serverless compatibility
+// Serverless is more compatible with Resend SDK instead of Nodemailer 
 import { Resend } from 'resend';
 
 @Injectable()
@@ -28,7 +28,7 @@ export class EmailService implements OnModuleInit {
 
     private async initializeResend() {
         try {
-            const apiKey = this.configService.get<string>('RESEND_API_KEY');
+            const apiKey = this.configService.get<string>('RESEND_API_KEY'); //Traps value straight from the .env 
 
             if (!apiKey) {
                 this.logger.warn('RESEND_API_KEY is missing. Emails will not be sent.');
@@ -50,7 +50,7 @@ export class EmailService implements OnModuleInit {
 
     private async testConnection() {
         try {
-            // Just test if we can access the API
+            // Test if we can access the API
             const { data, error } = await this.resend.domains.list();
             if (error) {
                 this.logger.warn('Resend API test failed:', error);
@@ -130,7 +130,10 @@ export class EmailService implements OnModuleInit {
                 html: html,
                 headers: {
                     'X-Entity-Ref-ID': emailLog.id,
+                    'X-Open-Tracking': 'true',    // Enable open tracking
+                    'X-Click-Tracking': 'true',   // Enable click tracking
                 },
+                
             });
 
             if (error) {
@@ -175,7 +178,8 @@ export class EmailService implements OnModuleInit {
     }
 
     async sendWelcomeEmail(user: User, name: string, verificationToken: string): Promise<void> {
-        const frontendUrl = this.configService.get<string>('appConfig.frontendUrl');
+        const frontendUrl = this.configService.get<string>('appConfig.frontendUrl'); // Traps value from the appconfig file, appConfig file traps from env
+        // Correct this here and in your controller file, when you have your active frontend
         const verificationUrl = `${frontendUrl}/api/v1/auth/verify-email-test?token=${verificationToken}`;
 
         const html = `

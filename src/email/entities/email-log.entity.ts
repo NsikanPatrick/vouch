@@ -37,7 +37,7 @@ export class EmailLog {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'userId' })
     user: User;
 
