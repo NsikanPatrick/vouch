@@ -8,6 +8,9 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../auth/entities/user.entity';
 
+// For free resend domains, resend permits only email.delivered event log, the others
+// (clicked, opened, bounced, complained) works fine but only active on verified domains.
+
 @Controller('admin/emails')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)

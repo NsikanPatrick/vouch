@@ -6,7 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailLog, EmailType, EmailStatus } from './entities/email-log.entity';
 import { User } from '../auth/entities/user.entity';
 
-// Serverless is more compatible with Resend SDK instead of Nodemailer 
+// Used Resend SDK instead of nodemailer due to better severless compatibility
 import { Resend } from 'resend';
 
 @Injectable()

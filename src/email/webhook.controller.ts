@@ -4,6 +4,9 @@ import { Public } from '../common/decorators/public.decorator';
 import { EmailService } from './email.service';
 import { Resend } from 'resend';
 
+// For free resend domains, resend permits only email.delivered event log, the others
+// (clicked, opened, bounced, complained) works fine but only active on verified domains.
+
 @Controller('webhooks/email')
 export class EmailWebhookController {
     private readonly logger = new Logger(EmailWebhookController.name);

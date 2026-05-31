@@ -6,6 +6,9 @@ import { Public } from '../common/decorators/public.decorator';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Request } from 'express';
 
+// For free resend domains, resend permits only email.delivered event log, the others
+// (clicked, opened, bounced, complained) works fine but only active on verified domains.
+
 interface ResendWebhookEvent {
     type: 'email.delivered' | 'email.opened' | 'email.clicked' | 'email.bounced' | 'email.complained';
     data: {
