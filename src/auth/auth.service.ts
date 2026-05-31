@@ -496,6 +496,43 @@ export class AuthService {
 
         return { message: `User status updated to ${status}` };
     }
+
+    // ============== ADMIN: DELETE ACCOUNT PLUS RELATED FILES =================
+    async deleteUser(userId: string, adminId: string) {
+        // Confirm the actor executing this route is an authenticated Admin
+        const admin = await this.usersRepository.findOne({ where: { id: adminId } });
+        if (!admin || admin.role !== UserRole.ADMIN) {
+            throw new UnauthorizedException('Access denied: Admin privileges required');
+        }
+
+        // Prevent administrators from accidentally executing a self-delete routine
+        if (userId === adminId) {
+            throw new BadRequestException('Action denied: You cannot delete your own admin account');
+        }
+
+        // Fetch target user along with profile metrics
+        const user = await this.usersRepository.findOne({
+            where: { id: userId },
+            select: ['id', 'profilePicture']
+        });
+
+        if (!user) {
+            throw new NotFoundException('Target user account not found');
+        }
+
+        // Extract and safely purge profile picture from Cloudinary storage
+        if (user.profilePicture) {
+            await this.fileUploadService.deleteFileByUrl(user.profilePicture);
+        }
+
+        // Cascade delete user tokens and core identity row
+        await this.refreshTokensRepository.delete({ userId });
+        await this.passwordResetsRepository.delete({ userId });
+
+        await this.usersRepository.remove(user);
+
+        return { message: 'User account and associated media assets cleared successfully' };
+    }
 }
 
 

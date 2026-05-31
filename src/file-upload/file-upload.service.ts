@@ -27,4 +27,25 @@ export class FileUploadService {
 
         return await this.fileRepository.save(newFileLog);
     }
+
+    // ==================== DELETE SINGLE FILE BY URL ====================
+    async deleteFileByUrl(url: string): Promise<void> {
+        if (!url) return;
+
+        // Find the file log matching the user's saved profile URL
+        const fileLog = await this.fileRepository.findOne({ where: { url } });
+
+        if (fileLog && fileLog.cloudinaryPublicId) {
+            try {
+                // 1. Evict asset from Cloudinary storage infrastructure
+                await this.cloudinaryService.deleteFile(fileLog.cloudinaryPublicId);
+            } catch (err) {
+                // Log it so you don't hang execution if asset was already deleted manually on dashboard
+                console.error(`Failed to clear asset from Cloudinary: ${fileLog.cloudinaryPublicId}`);
+            }
+
+            // 2. Remove log row from database
+            await this.fileRepository.remove(fileLog);
+        }
+    }
 }

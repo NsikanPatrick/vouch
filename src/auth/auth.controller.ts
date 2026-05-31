@@ -10,6 +10,7 @@ import {
     Headers,
     Patch,
     Delete,
+    Header,
     Query,
     Param,
     UseInterceptors, UploadedFile
@@ -117,7 +118,9 @@ export class AuthController {
             throw new BadRequestException('Reset token is missing from the link');
         }
 
-        // Return a clean HTML form directly to the browser screen
+        // The problem here is that the token gets missing for html, but works fine if the
+        // token is copied from email to postman. 
+        // It's majorly how the frontend handles the token
         return `
             <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Reset Your Password</h2>
@@ -214,6 +217,19 @@ export class AuthController {
     updateUserStatus(
         @Param('userId') userId: string, @Body('status') status: string,) {
         return this.authService.updateUserStatus(userId, status as any);
+    }
+
+    // Delete user plus related files
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @Delete('users/:userId')
+    async deleteUser(
+        @Param('userId') userId: string,
+        @Request() req: any,
+    ) {
+        // Extract the admin's ID from the JWT payload attached to the request by JwtAuthGuard
+        const adminId = req.user.id;
+        return this.authService.deleteUser(userId, adminId);
     }
 }
 
