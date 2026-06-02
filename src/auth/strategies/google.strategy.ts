@@ -11,7 +11,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             // Use fallback or assertion to guarantee a string type to the compiler
             clientID: configService.get<string>('appConfig.google.clientId')!,
             clientSecret: configService.get<string>('appConfig.google.clientSecret')!,
-            callbackURL: 'http://localhost:1000/api/v1/auth/google/callback',
+            callbackURL: process.env.NODE_ENV === 'production'
+                ? 'https://vouch-backend.vercel.app/api/v1/auth/google/callback'
+                : 'http://localhost:1000/api/v1/auth/google/callback',
             scope: ['email', 'profile'],
         });
     }

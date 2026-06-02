@@ -272,6 +272,7 @@ export class AuthController {
     // Scroll down to Authorized redirect URIs, then add you redirect url callback like: https://vouch-backend.vercel.app/api/v1/auth/google/callback
 
     // To test, go to this url on browser: http://localhost:1000/api/v1/auth/google
+    // Deployment: https://vouch-backend.vercel.app/api/v1/auth/google
     // Ensure to set/update this calback on google console: http://localhost:1000/api/v1/auth/google/callback
     // Use your actual production url
     @Public()
@@ -294,7 +295,8 @@ export class AuthController {
         // req.user contains the profile object returned from GoogleStrategy.validate()
         const result = await this.authService.validateSocialLogin(req.user, ip, userAgent);
 
-        // https://vouch-backend.vercel.app Redirect back to your frontend client storefront with tokens appended as URL query parameters
+        // Callback url: https://vouch-backend.vercel.app/api/v1/auth/google/callback 
+        // Redirect back to your frontend client with tokens appended as URL query parameters
         return res.redirect(
             // Ensure this url reflects your actual frontend url when the frontend is ready
             `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
