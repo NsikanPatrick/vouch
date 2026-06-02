@@ -267,6 +267,9 @@ export class AuthController {
     // All the above is within the project you've already created in the cloud console
     // If you've not created a project before, when you get to console.cloud.google.com
     // Click "select a project" at the top left, create new project, then you proceed with the steps above
+    // To edit the callback url in google console, goto the project, select clients from the left sidebar,
+    // Go to this section on the main screen: OAuth 2.0 Client IDs, use the pencil button on the client
+    // Scroll down to Authorized redirect URIs, then add you redirect url callback like: https://vouch-backend.vercel.app/api/v1/auth/google/callback
 
     // To test, go to this url on browser: http://localhost:1000/api/v1/auth/google
     // Ensure to set/update this calback on google console: http://localhost:1000/api/v1/auth/google/callback

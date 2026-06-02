@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
+import { OtpVerification } from './entities/otp-verification.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -19,7 +20,7 @@ import { FileUploadModule } from '../file-upload/file-upload.module';
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
-    TypeOrmModule.forFeature([User, RefreshToken, PasswordReset]),
+    TypeOrmModule.forFeature([User, RefreshToken, PasswordReset, OtpVerification]),
     PassportModule,
     FileUploadModule,
 
