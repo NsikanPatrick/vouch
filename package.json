@@ -19,8 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-
     "typeorm": "npx typeorm-ts-node-commonjs",
+    "migration:generate": "npm run build && npm run typeorm migration:generate -- -d dist/data-source.js",
     "migration:run": "npm run build && npm run typeorm migration:run -- -d dist/data-source.js",
     "migration:revert": "npm run typeorm migration:revert -- -d dist/data-source.js"
   },
@@ -47,6 +47,7 @@
     "helmet": "^8.1.0",
     "nodemailer": "^8.0.7",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0",
     "redis": "^5.12.1",
@@ -69,6 +70,7 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/nodemailer": "^8.0.0",
+    "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.3",
     "eslint": "^9.18.0",

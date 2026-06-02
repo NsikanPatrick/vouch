@@ -5,13 +5,16 @@ import {
     Get,
     UseGuards,
     BadRequestException,
-    Request,
+    // Request,
     Ip,
     Headers,
     Patch,
     Delete,
     Header,
     Query,
+    Req,
+    Res,
+    ParseUUIDPipe,
     Param,
     UseInterceptors, UploadedFile
 } from '@nestjs/common';
@@ -22,6 +25,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { GoogleAuthGuard } from '../common/guards/google-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -29,6 +33,19 @@ import { UserRole } from './entities/user.entity';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+
+// RETOUCHED 3: Created an explicit extended type interface for endpoints that rely on req.user
+interface RequestWithUser extends ExpressRequest {
+    user: {
+        id: string;
+        email: string;
+        name: string;
+        provider?: string;
+        providerId?: string;
+        role?: string;
+    };
+}
 
 
 @Controller('auth')
@@ -103,6 +120,13 @@ export class AuthController {
         return this.authService.forgotPassword(forgotPasswordDto);
     }
 
+    // This part may give a little frontend issue, pay attention
+    // Payload
+    // // Token attached to the link sent on forgot password email
+    // {
+    //     "token": "66ff10c2-fdef-46a4-b10a-e165c8603548",
+    //     "newPassword": "Nsikan0!"
+    // }
     @Public()
     @Post('reset-password')
     resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
@@ -224,14 +248,85 @@ export class AuthController {
     @Roles(UserRole.ADMIN)
     @Delete('users/:userId')
     async deleteUser(
-        @Param('userId') userId: string,
-        @Request() req: any,
+        // ParseUUIDPipe for a clean validation error message, incase the wrong UUID is entered
+        @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
+        // @Request() req: any,
+        @Req() req: RequestWithUser, 
     ) {
         // Extract the admin's ID from the JWT payload attached to the request by JwtAuthGuard
         const adminId = req.user.id;
         return this.authService.deleteUser(userId, adminId);
     }
+
+    // ========== CONTROLLER FOR GOOGLE LOGIN ==============
+    // Open your Google Cloud Console. => console.cloud.google.com
+    // Navigate to your project, then go to the Google Auth Platform or APIs & Services > Credentials dashboard.
+    // Under the Clients tab (or OAuth 2.0 Client IDs list), click your Web Application client to edit its settings.
+    // Scroll down to the Authorized redirect URIs section.
+    // Click + Add URI and paste your endpoint.
+    // All the above is within the project you've already created in the cloud console
+    // If you've not created a project before, when you get to console.cloud.google.com
+    // Click "select a project" at the top left, create new project, then you proceed with the steps above
+
+    // To test, go to this url on browser: http://localhost:1000/api/v1/auth/google
+    // Ensure to set/update this calback on google console: http://localhost:1000/api/v1/auth/google/callback
+    // Use your actual production url
+    @Public()
+    @Get('google')
+    @UseGuards(GoogleAuthGuard) // Swapped string for your strongly-typed class guard
+    async googleAuth(@Req() req: ExpressRequest) {
+        // This handler remains empty. Passport automatically intercepts the execution
+        // flow here and redirects the client browser straight to Google's sign-in screen.
+    }
+
+    @Public()
+    @Get('google/callback')
+    @UseGuards(GoogleAuthGuard) 
+    async googleAuthRedirect(
+        @Req() req: RequestWithUser, // Type ref to the extended interface containing .user property definition
+        @Res() res: ExpressResponse, // Type reference to avoid metadata generation clashes
+        @Ip() ip: string,
+        @Headers('user-agent') userAgent: string
+    ) {
+        // req.user contains the profile object returned from GoogleStrategy.validate()
+        const result = await this.authService.validateSocialLogin(req.user, ip, userAgent);
+
+        // https://vouch-backend.vercel.app Redirect back to your frontend client storefront with tokens appended as URL query parameters
+        return res.redirect(
+            // Ensure this url reflects your actual frontend url when the frontend is ready
+            `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
+        );
+    }
+
+    // This is a temporary success screen/route, will be replaced when the actual frontend is ready
+    @Public()
+    @Get('google/debug-view')
+    async googleDebugView(@Query('token') token: string, @Query('refresh') refresh: string) {
+        return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: #1a73e8; margin-top: 0;">🎉 OAuth Success!</h2>
+            <p style="color: #555;">This page shows the backend authentication system is fully working. You can now copy the access and refresh tokens below to test the authenticated endpoints in Postman:</p>
+            
+            <p><strong>Access Token (Bearer Token):</strong></p>
+            <textarea style="width:100%; height:100px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${token}</textarea>
+            
+            <p style="margin-top: 15px;"><strong>Refresh Token:</strong></p>
+            <textarea style="width:100%; height:50px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${refresh}</textarea>
+        </div>
+    `;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -155,6 +155,11 @@ export class AuthService {
             throw new UnauthorizedException(`Account is ${user.status}. Please contact support.`);
         }
 
+        // Guard against Google OAuth users attempting traditional login without a password
+        if (!user.password) {
+            throw new UnauthorizedException('This account uses Google Sign-In. Please log in with Google.');
+        }
+
         const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
         if (!isPasswordValid) {
@@ -342,6 +347,12 @@ export class AuthService {
     }
 
     // ==================== RESET PASSWORD ====================
+    // Payload
+    // // Token attached to the link sent on forgot password email
+    // {
+    //     "token": "66ff10c2-fdef-46a4-b10a-e165c8603548",
+    //     "newPassword": "Nsikan0!"
+    // }
     async resetPassword(resetPasswordDto: ResetPasswordDto) {
         const passwordReset = await this.passwordResetsRepository.findOne({
             where: { token: resetPasswordDto.token, isUsed: false },
@@ -379,6 +390,11 @@ export class AuthService {
 
         if (!user) {
             throw new NotFoundException('User not found');
+        }
+
+        // Blocks change-password requests for native social-auth profiles
+        if (!user.password) {
+            throw new BadRequestException('Accounts created with Google cannot change passwords here. Use forgot-password instead.');
         }
 
         const isPasswordValid = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
@@ -532,6 +548,37 @@ export class AuthService {
         await this.usersRepository.remove(user);
 
         return { message: 'User account and associated media assets cleared successfully' };
+    }
+
+    // ================= SOCIAL LOGIN WITH GOOGLE =======================
+    async validateSocialLogin(profile: any, ip: string, userAgent: string) {
+        // 1. Look for existing user by email
+        let user = await this.usersRepository.findOne({ where: { email: profile.email } });
+
+        if (!user) {
+            // 2. Register them automatically if they don't exist
+            user = this.usersRepository.create({
+                email: profile.email,
+                name: profile.name,
+                provider: profile.provider,
+                providerId: profile.providerId,
+                status: AccountStatus.ACTIVE,
+                emailVerifiedAt: new Date(), // Google emails are already verified
+            });
+            user = await this.usersRepository.save(user);
+        } else {
+            // 3. If they exist but registered via credentials, link their social account data
+            if (!user.provider) {
+                user.provider = profile.provider;
+                user.providerId = profile.providerId;
+                await this.usersRepository.save(user);
+            }
+        }
+
+        // 4. Reuse your existing robust token generation logic
+        const tokens = await this.generateTokens(user, userAgent, ip);
+
+        return tokens;
     }
 }
 

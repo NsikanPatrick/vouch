@@ -37,8 +37,8 @@ export class User {
     @Column()
     name: string;
 
-    @Column({ select: false }) // Don't include in normal queries
-    password: string;
+    @Column({ select: false, nullable: true }) // Hidden from queries AND allows null for social login
+    password?: string; // Appended "?" to make it optional in TypeScript
 
     @Column({
         type: 'enum',
@@ -68,7 +68,8 @@ export class User {
     loginAttempts: number;
 
     @Column({ type: 'timestamp', nullable: true })
-    lockedUntil: Date | null; // Added | null here // Account lock until date (after too many failed attempts)
+        // Added | null here // Account lock until date (after too many failed attempts)
+    lockedUntil: Date | null; 
 
     @Column({ nullable: true })
     profilePicture: string;
@@ -84,6 +85,13 @@ export class User {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    // Columns for social logins
+    @Column({ nullable: true })
+    provider: string; // 'google', 'apple', 'local'
+
+    @Column({ nullable: true })
+    providerId: string; // The unique ID returned by Google/Apple
 
     // Lifecycle hooks
     @BeforeInsert()

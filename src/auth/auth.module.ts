@@ -10,6 +10,8 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { GoogleStrategy } from './strategies/google.strategy'; 
+import { GoogleAuthGuard } from '../common/guards/google-auth.guard';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FileUploadModule } from '../file-upload/file-upload.module';
 
@@ -38,6 +40,8 @@ import { FileUploadModule } from '../file-upload/file-upload.module';
     AuthService,
     JwtStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy, 
+    GoogleAuthGuard,
     // AuthListener, // Event-related fxnalities are decoupled to the events module, so, the AuthListener provider is listed there instead
   ],
   exports: [AuthService],
