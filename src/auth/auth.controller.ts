@@ -5,6 +5,7 @@ import {
     Get,
     UseGuards,
     BadRequestException,
+    UnauthorizedException,
     // Request,
     Ip,
     Headers,
@@ -352,6 +353,21 @@ export class AuthController {
             message: 'Identity confirmed and authenticated successfully.',
             ...sessionPayload
         };
+    }
+
+    // You may implement passwordless signup controller (via otp) here later (If you want)
+
+    // Controller to clean up expired OTPs from db
+    @Public() 
+    @Post('maintenance/clean-otps')
+    async cleanExpiredOtps(@Headers('x-cron-secret') cronSecret: string) {
+        // Guardrail check to make sure random public users can't trigger database stress
+        if (cronSecret !== process.env.CRON_SECRET) {
+            throw new UnauthorizedException('Invalid cron token signature.');
+        }
+
+        await this.authService.purgeExpiredOtps();
+        return { success: true, message: 'Expired OTP tokens purged successfully.' };
     }
 }
 

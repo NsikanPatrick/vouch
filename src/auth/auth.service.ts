@@ -4,13 +4,13 @@ import {
     UnauthorizedException,
     BadRequestException,
     NotFoundException,
-    Inject,
+    Logger,
     forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan, IsNull, Not } from 'typeorm';
+import { Repository, MoreThan, LessThan, IsNull, Not } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -38,6 +38,7 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
@@ -244,6 +245,16 @@ export class AuthService {
                 role: user.role,
             }
         };
+    }
+
+    // You may implement passwordless signup service (via otp) here later (If you want)
+    // ============ Service to clean up expired OTPs from db ===============
+    // It is notified on vercel.json file to perform the cron job(Cleanup otps every 12am)
+    async purgeExpiredOtps(): Promise<void> {
+        const result = await this.otpRepository.delete({
+            expiresAt: LessThan(new Date()),
+        });
+        this.logger.log(`🧹 Database maintenance: Purged ${result.affected} expired OTP records.`);
     }
 
     // ==================== UPDATE PROFILE SYSTEM ====================
