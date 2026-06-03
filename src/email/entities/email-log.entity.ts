@@ -17,6 +17,7 @@ export enum EmailType {
     ACCOUNT_LOCKED = 'account_locked',
     MAGIC_LINK = 'magic_link',
     TWO_FA = 'two_fa',
+    OTP = 'otp',
 }
 
 export enum EmailStatus {

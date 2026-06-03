@@ -29,9 +29,12 @@ import {
     PasswordResetSuccessEvent,
     AccountLockedEvent,
     UserLoggedInEvent,
+    OtpRequestedEvent
 } from './events/auth-events.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { FileUploadService } from '../file-upload/file-upload.service';
+import { OtpVerification } from './entities/otp-verification.entity';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +45,8 @@ export class AuthService {
         private refreshTokensRepository: Repository<RefreshToken>,
         @InjectRepository(PasswordReset)
         private passwordResetsRepository: Repository<PasswordReset>,
+        @InjectRepository(OtpVerification)
+        private otpRepository: Repository<OtpVerification>,
         private jwtService: JwtService,
         private eventEmitter: EventEmitter2,
         private fileUploadService: FileUploadService,
@@ -192,6 +197,52 @@ export class AuthService {
         return {
             user: result,
             ...tokens,
+        };
+    }
+
+    // ==================== VERIFY OTP AND LOGIN =====================
+ 
+    async verifyOtpAndLogin(
+        email: string,
+        code: string,
+        ip: string,
+        userAgent: string
+    ): Promise<{ accessToken: string; refreshToken: string; user: any }> {
+
+        // 1. Using the existing verification logic to confirm and burn the OTP token
+        await this.verifyOtp(email, code);
+
+        // 2. Fetch the user profile from the database
+        const user = await this.usersRepository.findOne({ where: { email } });
+        if (!user) {
+            throw new NotFoundException('No active user account is registered under this email address.');
+        }
+
+        // 3. Check if the user is currently locked out before granting access
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+            throw new BadRequestException(
+                `This account is temporarily locked. Please try again after ${user.lockedUntil.toLocaleString()}.`
+            );
+        }
+
+        // 4. Generate production JWT payloads
+        const tokens = await this.generateTokens(user, userAgent, ip);
+
+        // 5. Emit a login event to track security audit logs synchronously with your listener architecture
+        this.eventEmitter.emit(
+            'user.logged_in',
+            new UserLoggedInEvent(user, ip, userAgent)
+        );
+
+        return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+            }
         };
     }
 
@@ -580,7 +631,86 @@ export class AuthService {
 
         return tokens;
     }
+
+    // ======================== OTP CODE =========================
+    // 1. GENERATE AND SEND OTP
+    async sendOtp(email: string): Promise<{ message: string }> {
+        // 1. Implicit Invalidation: Deactivate any active, unused OTPs for this email first before sending a new one
+        await this.otpRepository.update(
+            { email, isUsed: false },
+            { isUsed: true }
+        );
+
+        // 2. Generate the raw, plain text 6-digit numeric string
+        const rawOtpCode = crypto.randomInt(100000, 999999).toString();
+
+        // 3. Hash the raw code using SHA-256 before saving to the database
+        const hashedOtpCode = crypto
+            .createHash('sha256')
+            .update(rawOtpCode)
+            .digest('hex');
+
+        // 4. Establish a 10-minute expiration window
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+        // 5. Commit the hashed value to your database
+        const newOtp = this.otpRepository.create({
+            email,
+            code: hashedOtpCode, // Storage is now fully secured
+            expiresAt,
+        });
+        await this.otpRepository.save(newOtp);
+
+        // 6. EMIT THE OTP EVENT ASYNCHRONOUSLY
+        // This helps in freeing up Vercel execution context thread!
+        await this.eventEmitter.emitAsync(
+            OtpRequestedEvent.eventName,
+            new OtpRequestedEvent(email, rawOtpCode) // Passing raw code so email can send it
+        );
+
+        // Temporary console log for development tracking
+        console.log(`📡 [OTP Debug Engine] Code for ${email}: ${rawOtpCode}`);
+
+        return {
+            message: 'A verification code has been dispatched to your email address.'
+        };
+    }
+
+    async verifyOtp(email: string, rawCodeSubmitted: string): Promise<boolean> {
+        // 1. Hash the incoming code using the identical SHA-256 algorithm setup
+        const hashedSubmission = crypto
+            .createHash('sha256')
+            .update(rawCodeSubmitted)
+            .digest('hex');
+
+        // 2. Query using the generated hash signature
+        const otpRecord = await this.otpRepository.findOne({
+            where: {
+                email,
+                code: hashedSubmission, // Match against your hashed database value
+                isUsed: false,
+                expiresAt: MoreThan(new Date()), // Guardrail window check
+            },
+        });
+
+        if (!otpRecord) {
+            throw new BadRequestException('The verification code is invalid or has expired.');
+        }
+
+        // 3. Burn the token instantly to block re-play exploitation vectors
+        otpRecord.isUsed = true;
+        await this.otpRepository.save(otpRecord);
+
+        return true;
+    }
+
 }
+
+
+
+
+
 
 
 

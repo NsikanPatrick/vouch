@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { EmailService } from '../../../email/email.service';
-import { UserRegisteredEvent, EmailVerifiedEvent, PasswordResetRequestedEvent, PasswordResetSuccessEvent, AccountLockedEvent } from '../auth-events.service';
+import { UserRegisteredEvent, 
+    EmailVerifiedEvent, 
+    PasswordResetRequestedEvent, 
+    PasswordResetSuccessEvent, 
+    AccountLockedEvent, 
+    OtpRequestedEvent } from '../auth-events.service';
 
 @Injectable()
 export class AuthListener {
@@ -72,6 +77,22 @@ export class AuthListener {
             );
         } catch (error) {
             this.logger.error(`Failed to send account lock notification to ${event.user.email}:`, error);
+        }
+    }
+
+    @OnEvent(OtpRequestedEvent.eventName)
+    async handleOtpRequested(event: OtpRequestedEvent) {
+        this.logger.log(`Processing OTP email distribution for address: ${event.email}`);
+
+        try {
+            // Hand the data over directly to your email template engine
+            await this.emailService.sendOtpEmail(
+                event.email,
+                event.rawOtpCode
+            );
+            this.logger.log(`OTP verification code successfully dispatched to ${event.email}`);
+        } catch (error) {
+            this.logger.error(`Failed to execute OTP email transmission to ${event.email}:`, error);
         }
     }
 }

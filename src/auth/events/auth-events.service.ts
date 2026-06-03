@@ -59,3 +59,13 @@ export class AccountLockedEvent {
         public readonly reason: string,
     ) { }
 }
+
+// Emit an event to send OTP
+export class OtpRequestedEvent {
+    static readonly eventName = 'otp.requested';
+
+    constructor(
+        public readonly email: string,
+        public readonly rawOtpCode: string,
+    ) { }
+}

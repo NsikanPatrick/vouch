@@ -23,6 +23,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RequestOtpDto, VerifyOtpDto } from './dto/otp.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { GoogleAuthGuard } from '../common/guards/google-auth.guard';
@@ -259,25 +260,13 @@ export class AuthController {
     }
 
     // ========== CONTROLLER FOR GOOGLE LOGIN ==============
-    // Open your Google Cloud Console. => console.cloud.google.com
-    // Navigate to your project, then go to the Google Auth Platform or APIs & Services > Credentials dashboard.
-    // Under the Clients tab (or OAuth 2.0 Client IDs list), click your Web Application client to edit its settings.
-    // Scroll down to the Authorized redirect URIs section.
-    // Click + Add URI and paste your endpoint.
-    // All the above is within the project you've already created in the cloud console
-    // If you've not created a project before, when you get to console.cloud.google.com
-    // Click "select a project" at the top left, create new project, then you proceed with the steps above
-    // To edit the callback url in google console, goto the project, select clients from the left sidebar,
-    // Go to this section on the main screen: OAuth 2.0 Client IDs, use the pencil button on the client
-    // Scroll down to Authorized redirect URIs, then add you redirect url callback like: https://vouch-backend.vercel.app/api/v1/auth/google/callback
-
-    // To test, go to this url on browser: http://localhost:1000/api/v1/auth/google
-    // Deployment: https://vouch-backend.vercel.app/api/v1/auth/google
+    // Test GOOGLE login, go to this url on browser: http://localhost:1000/api/v1/auth/google
+    // Deployment test: https://vouch-backend.vercel.app/api/v1/auth/google
     // Ensure to set/update this calback on google console: http://localhost:1000/api/v1/auth/google/callback
     // Use your actual production url
     @Public()
     @Get('google')
-    @UseGuards(GoogleAuthGuard) // Swapped string for your strongly-typed class guard
+    @UseGuards(GoogleAuthGuard) 
     async googleAuth(@Req() req: ExpressRequest) {
         // This handler remains empty. Passport automatically intercepts the execution
         // flow here and redirects the client browser straight to Google's sign-in screen.
@@ -295,15 +284,16 @@ export class AuthController {
         // req.user contains the profile object returned from GoogleStrategy.validate()
         const result = await this.authService.validateSocialLogin(req.user, ip, userAgent);
 
-        // Callback url: https://vouch-backend.vercel.app/api/v1/auth/google/callback 
-        // Redirect back to your frontend client with tokens appended as URL query parameters
+        // Callback url, but already set in google strategy: https://vouch-backend.vercel.app/api/v1/auth/google/callback 
+        // The Redirect below moves to the frontend client with tokens appended as URL query parameters
         return res.redirect(
-            // Ensure this url reflects your actual frontend url when the frontend is ready
+            // Ensure this url reflects your actual frontend url when the frontend is ready. After signing in with google, it'll be redirected to this url
             `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
         );
     }
 
-    // This is a temporary success screen/route, will be replaced when the actual frontend is ready
+    // This is a temporary success screen/route that will be shown on successful login, 
+    // it will be replaced(taken off) when the actual frontend is ready
     @Public()
     @Get('google/debug-view')
     async googleDebugView(@Query('token') token: string, @Query('refresh') refresh: string) {
@@ -319,6 +309,49 @@ export class AuthController {
             <textarea style="width:100%; height:50px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${refresh}</textarea>
         </div>
     `;
+    }
+
+    // ++++++++++++++++++++++++ PASSWORDLESS LOGIN +++++++++++++++++++++++
+    // ======================== OTP CONTROLLER ===========================
+    // POST https:domain/api/v1/auth/otp/request
+
+    // {
+    // "email": "registered-email@gmail.com"
+    // }
+
+    @Public()
+    @Post('otp/request')
+    async requestOtp(@Body() dto: RequestOtpDto) {
+        return this.authService.sendOtp(dto.email);
+    }
+
+    // POST https://domain/api/v1/auth/otp/verify
+
+    // {
+    // "email": "registered-email@gmail.com",
+    // "code": "received code from email"
+    // }
+    @Public()
+    @Post('otp/verify')
+    async verifyOtp(
+        @Body() dto: VerifyOtpDto,
+        @Ip() ip: string,
+        @Headers('user-agent') userAgent: string
+    ) {
+        // Run the combined verification + token issuance pipeline
+        const sessionPayload = await this.authService.verifyOtpAndLogin(
+            dto.email,
+            dto.code,
+            ip,
+            userAgent
+        );
+
+        // Return a unified token block matching your standard login endpoint format
+        return {
+            success: true,
+            message: 'Identity confirmed and authenticated successfully.',
+            ...sessionPayload
+        };
     }
 }
 
