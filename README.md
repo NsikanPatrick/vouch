@@ -194,66 +194,66 @@ describe('AuthService', () => {
 
 ## ⚙️ Local Installation & Setup
 
-1. **Clone the Repository:**
+1. ### Clone the Repository:
    ```bash
    git clone https://github.com/NsikanPatrick/vouch.git
    cd vouch
 
-2. **Install dependencies:**
+2. ### Install dependencies:
     ```bash
     npm install
 
-3. **Configure Environment Variables:**
+3. ### Configure Environment Variables:
     Create a .env file in the root directory and configure your credentials:
 
-    ### App Config 
+    **App Config** 
     PORT=1000
 
-    ### Database Config (Neon PostgreSQL)
+    **Database Config (Neon PostgreSQL)**
     DATABASE_URL=postgresql://user:password@host/db?sslmode=require
 
-    ### JWT Configuration Secrets
+    **JWT Configuration Secrets**
     JWT_ACCESS_SECRET=your_super_secret_access_key
     JWT_ACCESS_EXPIRY=15m
     JWT_VERIFICATION_SECRET=your_email_verification_secret_key
 
-    ### Cloudinary Credentials
+    **Cloudinary Credentials**
     CLOUDINARY_CLOUD_NAME=your_cloud_name
     CLOUDINARY_API_KEY=your_api_key
     CLOUDINARY_API_SECRET=your_api_secret
 
-4. **Run Database Migrations / Sync Engine:**
+4. ### Run Database Migrations / Sync Engine:
     Ensure your target database instance is up and running.
 
-5. **Fire Up the Engine Server:**
-    ### Development watch mode
+5. ### Fire Up the Engine Server:
+    **Development watch mode**
     npm run start:dev
 
-    ### Production build compilation
+    **Production build compilation**
     npm run build
     npm run start:prod
 
-6. **Verification & Testing Suite**
+6. ### Verification & Testing Suite
 
     The code maintains strict behavioral unit testing isolates along with end-to-end integration boundaries via Jest.
 
-    ### Execute Unit Isolated Suites
+    **Execute Unit Isolated Suites**
     npm run test
 
-    ### npm run test:watch	
-    Run tests in watch mode
+    **Run tests in watch mode**	
+    npm run test:watch
 
-    ### Run End-To-End HTTP Route Tests
+    **Run End-To-End HTTP Route Tests**
     npm run test:e2e
 
-    ### Inspect Automated Code Coverage Matrix
+    **Inspect Automated Code Coverage Matrix**
     npm run test:cov
 
-    ### npm run test:debug	
-    Debug tests with breakpoints
+    **Debug tests with breakpoints** 	
+    npm run test:debug
 
-    ### npm run test:integration	
-    Run database integration tests
+    **Run database integration tests** 	
+    npm run test:integration
 
 ## CI/CD Pipeline
 
@@ -313,6 +313,8 @@ A massive thank you to the incredible tools, frameworks, and platforms that powe
 
     📚 Documentation: https://docs.vouch.com (Coming soon)
 
+---
+
 <div align="center">
 
 Built with 🖤 by Nsikan Patrick Adaowo
@@ -320,4 +322,4 @@ Built with 🖤 by Nsikan Patrick Adaowo
 Managed under strict Product Engineering and Systems Design principles.
 
 Report Bug · Request Feature
-</div> ```
+</div> 
