@@ -180,4 +180,4 @@ A massive thank you to the incredible tools, frameworks, and platforms that powe
 
     📚 Documentation: https://docs.vouch.com (No documentation yet)
 
-Designed with 🖤 by Nsikan Adaowo. Managed under strict Software Engineering and Systems Design principles.
+Designed with 🖤 by Nsikan Adaowo. Managed under strict Product Engineering and Systems Design principles.

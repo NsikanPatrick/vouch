@@ -1,5 +1,6 @@
 import {
     Injectable,
+    Inject,
     ConflictException,
     UnauthorizedException,
     BadRequestException,
@@ -50,6 +51,7 @@ export class AuthService {
         private otpRepository: Repository<OtpVerification>,
         private jwtService: JwtService,
         private eventEmitter: EventEmitter2,
+        @Inject('FileUploadService')
         private fileUploadService: FileUploadService,
         private configService: ConfigService
     ) { }
