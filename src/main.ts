@@ -10,7 +10,7 @@ import express from 'express';
 // Cache the server instance across execution cycles in serverless deployment
 let cachedServer: express.Express;
 
-// 🧠 Shared Configuration Engine: Guarantees Local and Prod stay identical
+// Shared Configuration Engine: Guarantees Local and Prod stay identical
 function configureNestApp(app: INestApplication, configService: ConfigService) {
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,9 +26,17 @@ function configureNestApp(app: INestApplication, configService: ConfigService) {
   app.use(helmet());
   app.use(cookieParser());
 
+  // Dynamic CORS configuration
+  const allowedOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:3000').split(',');
+
+  // Enable cors
   app.enableCors({
-    origin: configService.get<string>('appConfig.frontendUrl') || configService.get('FRONTEND_URL', 'http://localhost:1000'),
+    // origin: configService.get<string>('appConfig.frontendUrl') || configService.get('FRONTEND_URL', 'http://localhost:1000'),
+    origin: allowedOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Authorization'],
   });
 
   app.setGlobalPrefix('api/v1');

@@ -51,7 +51,7 @@ export class AuthService {
         private otpRepository: Repository<OtpVerification>,
         private jwtService: JwtService,
         private eventEmitter: EventEmitter2,
-        @Inject('FileUploadService')
+        // @Inject('FileUploadService') // Activate this line only for integration test
         private fileUploadService: FileUploadService,
         private configService: ConfigService
     ) { }
