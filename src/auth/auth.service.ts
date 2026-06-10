@@ -144,7 +144,7 @@ export class AuthService {
     async login(loginDto: LoginDto, ip: string, userAgent: string) {
         const user = await this.usersRepository.findOne({
             where: { email: loginDto.email.toLowerCase() },
-            select: ['id', 'email', 'name', 'password', 'role', 'status', 'loginAttempts', 'lockedUntil', 'emailVerifiedAt'],
+            select: ['id', 'email', 'name', 'password', 'role', 'status', 'loginAttempts', 'lockedUntil', 'emailVerifiedAt', 'profilePicture'],
         });
 
         if (!user) {
@@ -198,7 +198,16 @@ export class AuthService {
 
         const { password, ...result } = user;
         return {
-            user: result,
+            user: {
+                id: result.id,
+                email: result.email,
+                name: result.name,
+                role: result.role,
+                status: result.status,
+                profilePicture: result.profilePicture, // Profile picture must be included
+                createdAt: result.createdAt,
+                lastLoginAt: result.lastLoginAt,
+            },
             ...tokens,
         };
     }

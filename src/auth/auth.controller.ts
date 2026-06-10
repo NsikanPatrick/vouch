@@ -137,38 +137,38 @@ export class AuthController {
 
     // TEMPORARY TESTING ROUTE (Allows password reset directly from the email link via a browser form)
     // This is the part of the password (sent to email), that'll trap new password from the browser form
-    @Public()
-    @Get('reset-password-test')
-    async resetPasswordTest(@Query('token') token: string) {
-        if (!token) {
-            throw new BadRequestException('Reset token is missing from the link');
-        }
+    // @Public()
+    // @Get('reset-password-test')
+    // async resetPasswordTest(@Query('token') token: string) {
+    //     if (!token) {
+    //         throw new BadRequestException('Reset token is missing from the link');
+    //     }
 
-        // The problem here is that the token gets missing for html, but works fine if the
-        // token is copied from email to postman. 
-        // It's majorly how the frontend handles the token
-        return `
-            <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Reset Your Password</h2>
-                <p style="color: #666; font-size: 14px; text-align: center; margin-bottom: 20px;">Enter your new password below to update your account access.</p>
+    //     // The problem here is that the token gets missing for html, but works fine if the
+    //     // token is copied from email to postman. 
+    //     // It's majorly how the frontend handles the token
+    //     return `
+    //         <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    //             <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Reset Your Password</h2>
+    //             <p style="color: #666; font-size: 14px; text-align: center; margin-bottom: 20px;">Enter your new password below to update your account access.</p>
                 
-                <form action="/api/v1/auth/reset-password" method="POST">
-                    <input type="hidden" name="token" value="${token}" />
+    //             <form action="/api/v1/auth/reset-password" method="POST">
+    //                 <input type="hidden" name="token" value="${token}" />
                     
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">New Password</label>
-                        <input type="password" name="newPassword" required placeholder="••••••••" 
-                            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" />
-                    </div>
+    //                 <div style="margin-bottom: 15px;">
+    //                     <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">New Password</label>
+    //                     <input type="password" name="newPassword" required placeholder="••••••••" 
+    //                         style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" />
+    //                 </div>
                     
-                    <button type="submit" 
-                        style="width: 100%; background-color: #1a73e8; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">
-                        Update Password
-                    </button>
-                </form>
-            </div>
-        `;
-    }
+    //                 <button type="submit" 
+    //                     style="width: 100%; background-color: #1a73e8; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">
+    //                     Update Password
+    //                 </button>
+    //             </form>
+    //         </div>
+    //     `;
+    // }
 
     // Protected routes (authentication required)
     @UseGuards(JwtAuthGuard)
