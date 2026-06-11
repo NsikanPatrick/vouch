@@ -35,6 +35,7 @@ import { UserRole } from './entities/user.entity';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 
 // RETOUCHED 3: Created an explicit extended type interface for endpoints that rely on req.user
@@ -52,7 +53,9 @@ interface RequestWithUser extends ExpressRequest {
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+    constructor(private authService: AuthService,
+        private configService: ConfigService
+    ) { }
 
     // Public routes (no authentication required)
     @Public()
@@ -287,30 +290,34 @@ export class AuthController {
 
         // Callback url, but already set in google strategy: https://vouch-backend.vercel.app/api/v1/auth/google/callback 
         // The Redirect below moves to the frontend client with tokens appended as URL query parameters
+        // return res.redirect(
+        //     // Ensure this url reflects your actual frontend url when the frontend is ready. After signing in with google, it'll be redirected to this url
+        //     `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
+        // );
+        const frontendUrl = this.configService.get<string>('appConfig.frontendUrl');
         return res.redirect(
-            // Ensure this url reflects your actual frontend url when the frontend is ready. After signing in with google, it'll be redirected to this url
-            `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
+            `${frontendUrl}/auth/oauth-redirect?token=${result.accessToken}&refresh=${result.refreshToken}`
         );
     }
 
     // This is a temporary success screen/route that will be shown on successful login, 
     // it will be replaced(taken off) when the actual frontend is ready
-    @Public()
-    @Get('google/debug-view')
-    async googleDebugView(@Query('token') token: string, @Query('refresh') refresh: string) {
-        return `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            <h2 style="color: #1a73e8; margin-top: 0;">🎉 OAuth Success!</h2>
-            <p style="color: #555;">This page shows the backend authentication system is fully working. You can now copy the access and refresh tokens below to test the authenticated endpoints in Postman:</p>
+    // @Public()
+    // @Get('google/debug-view')
+    // async googleDebugView(@Query('token') token: string, @Query('refresh') refresh: string) {
+    //     return `
+    //     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    //         <h2 style="color: #1a73e8; margin-top: 0;">🎉 OAuth Success!</h2>
+    //         <p style="color: #555;">This page shows the backend authentication system is fully working. You can now copy the access and refresh tokens below to test the authenticated endpoints in Postman:</p>
             
-            <p><strong>Access Token (Bearer Token):</strong></p>
-            <textarea style="width:100%; height:100px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${token}</textarea>
+    //         <p><strong>Access Token (Bearer Token):</strong></p>
+    //         <textarea style="width:100%; height:100px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${token}</textarea>
             
-            <p style="margin-top: 15px;"><strong>Refresh Token:</strong></p>
-            <textarea style="width:100%; height:50px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${refresh}</textarea>
-        </div>
-    `;
-    }
+    //         <p style="margin-top: 15px;"><strong>Refresh Token:</strong></p>
+    //         <textarea style="width:100%; height:50px; font-family:monospace; padding:8px; box-sizing:border-box;" readonly>${refresh}</textarea>
+    //     </div>
+    // `;
+    // }
 
     // ++++++++++++++++++++++++ PASSWORDLESS LOGIN +++++++++++++++++++++++
     // ======================== OTP CONTROLLER ===========================
