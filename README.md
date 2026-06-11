@@ -1,6 +1,7 @@
 # VOUCH
 
-Vouch is a secure, highly scalable, and production-ready Full-Stack Authentication and Asset Management Engine built with **NestJS**, **TypeScript**, and **TypeORM**. Designed with a decoupled architecture, this system implements advanced security workflows, event-driven background processing, and independent media storage handling.
+Vouch is a secure, production-ready full‑stack authentication and asset management engine built with **NestJS**, **TypeScript**, and **TypeORM**. 
+Designed with a decoupled architecture, it supports event-driven background processing, independent media storage, and infrastructure-level identity utilities optimized for serverless deployments. Vouch centralizes token-rotation and automated state-maintenance routines (cron-driven), and exposes clear integration boundaries for multiple front-end applications.
 
 ---
 
