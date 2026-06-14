@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         // Get fresh user data from database
         const user = await this.usersRepository.findOne({
             where: { id: payload.id },
-            select: ['id', 'email', 'name', 'role', 'status', 'emailVerifiedAt'],
+            select: ['id', 'email', 'name', 'role', 'status', 'emailVerifiedAt', 'profilePicture', 'provider'],
         });
 
         if (!user) {
@@ -45,6 +45,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             email: user.email,
             name: user.name,
             role: user.role,
+            status: user.status,
+            profilePicture: user.profilePicture,
+            provider: user.provider,
         };
     }
 }

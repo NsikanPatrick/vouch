@@ -625,11 +625,11 @@ export class AuthService {
 
     // ================= SOCIAL LOGIN WITH GOOGLE =======================
     async validateSocialLogin(profile: any, ip: string, userAgent: string) {
-        // 1. Look for existing user by email
+        // 1. Check for existing user by email
         let user = await this.usersRepository.findOne({ where: { email: profile.email } });
 
         if (!user) {
-            // 2. Register them automatically if they don't exist
+            // 2. Register user automatically if their account doesn't exist
             user = this.usersRepository.create({
                 email: profile.email,
                 name: profile.name,
@@ -648,10 +648,25 @@ export class AuthService {
             }
         }
 
-        // 4. Reuse your existing robust token generation logic
+        // 4. Reuse token generation logic
         const tokens = await this.generateTokens(user, userAgent, ip);
 
-        return tokens;
+        // Same as login
+        const { password, ...userWithoutPassword } = user;
+
+        return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: {
+                id: userWithoutPassword.id,
+                email: userWithoutPassword.email,
+                name: userWithoutPassword.name,
+                role: userWithoutPassword.role,
+                status: userWithoutPassword.status,
+                profilePicture: userWithoutPassword.profilePicture,
+                provider: userWithoutPassword.provider,
+            },
+        };
     }
 
     // ======================== OTP CODE =========================

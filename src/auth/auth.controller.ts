@@ -295,8 +295,12 @@ export class AuthController {
         //     `https://vouch-backend.vercel.app/api/v1/auth/google/debug-view?token=${result.accessToken}&refresh=${result.refreshToken}`
         // );
         const frontendUrl = this.configService.get<string>('appConfig.frontendUrl');
+
+        // Create and Pass user data as JSON string in the URL
+        const userDataEncoded = encodeURIComponent(JSON.stringify(result.user));
+
         return res.redirect(
-            `${frontendUrl}/auth/oauth-redirect?token=${result.accessToken}&refresh=${result.refreshToken}`
+            `${frontendUrl}/auth/oauth-redirect?token=${result.accessToken}&refresh=${result.refreshToken}&user=${userDataEncoded}`
         );
     }
 
