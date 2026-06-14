@@ -225,7 +225,11 @@ export class AuthService {
         await this.verifyOtp(email, code);
 
         // 2. Fetch the user profile from the database
-        const user = await this.usersRepository.findOne({ where: { email } });
+        const user = await this.usersRepository.findOne({
+            where: { email },
+            select: ['id', 'email', 'name', 'role', 'status', 'profilePicture', 'createdAt', 'lastLoginAt'],
+        });
+
         if (!user) {
             throw new NotFoundException('No active user account is registered under this email address.');
         }
@@ -246,19 +250,27 @@ export class AuthService {
             new UserLoggedInEvent(user, ip, userAgent)
         );
 
+        // Return complete user data (same structure as login)
+        const { password, ...userWithoutPassword } = user;
+
         return {
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
             user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-            }
+                id: userWithoutPassword.id,
+                email: userWithoutPassword.email,
+                name: userWithoutPassword.name,
+                role: userWithoutPassword.role,
+                status: userWithoutPassword.status,
+                profilePicture: userWithoutPassword.profilePicture,
+                createdAt: userWithoutPassword.createdAt,
+                lastLoginAt: userWithoutPassword.lastLoginAt,
+            },
         };
     }
 
     // You may implement passwordless signup service (via otp) here later (If you want)
+    
     // ============ Service to clean up expired OTPs from db ===============
     // It is notified on vercel.json file to perform the cron job(Cleanup otps every 12am)
     async purgeExpiredOtps(): Promise<void> {
