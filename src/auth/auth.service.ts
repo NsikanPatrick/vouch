@@ -553,7 +553,7 @@ export class AuthService {
         const skip = (page - 1) * limit;
 
         const [users, total] = await this.usersRepository.findAndCount({
-            select: ['id', 'email', 'name', 'role', 'status', 'createdAt', 'lastLoginAt'],
+            select: ['id', 'email', 'name', 'role', 'status', 'createdAt', 'lastLoginAt', 'profilePicture'],
             skip,
             take: limit,
             order: { createdAt: 'DESC' },
