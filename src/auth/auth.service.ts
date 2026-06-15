@@ -598,6 +598,36 @@ export class AuthService {
         return { message: `User status updated to ${status}` };
     }
 
+    // ==================== UPDATE USER ROLE (Admin only) ====================
+    async updateUserRole(userId: string, role: string, adminId: string): Promise<{ message: string; user: any }> {
+        // Prevent admin from changing their own role
+        if (userId === adminId) {
+            throw new BadRequestException('You cannot change your own role');
+        }
+
+        const user = await this.usersRepository.findOne({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Validate role
+        if (!Object.values(UserRole).includes(role as UserRole)) {
+            throw new BadRequestException('Invalid role');
+        }
+
+        user.role = role as UserRole;
+        const updatedUser = await this.usersRepository.save(user);
+
+        const { password, ...result } = updatedUser;
+        return {
+            message: `User role updated to ${role} successfully`,
+            user: result,
+        };
+    }
+
     // ============== ADMIN: DELETE ACCOUNT PLUS RELATED FILES =================
     async deleteUser(userId: string, adminId: string) {
         // Confirm the actor executing this route is an authenticated Admin

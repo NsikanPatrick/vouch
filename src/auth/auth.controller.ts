@@ -248,6 +248,18 @@ export class AuthController {
         return this.authService.updateUserStatus(userId, status as any);
     }
 
+    // Update user role (Admin only)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @Patch('users/:userId/role')
+    async updateUserRole(
+        @Param('userId') userId: string,
+        @Body('role') role: string,
+        @CurrentUser('id') adminId: string,
+    ) {
+        return this.authService.updateUserRole(userId, role, adminId);
+    }
+
     // Delete user plus related files
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
